@@ -501,9 +501,45 @@ function SceneContent({ simulation, onSelectTopic, resetToken }) {
 }
 
 export default function GPUScene({ simulation, onSelectTopic, resetToken }) {
+  const containerRef = useRef(null);
+  const [viewportHeight, setViewportHeight] = useState(460);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || typeof ResizeObserver === "undefined") return;
+
+    const updateFromWidth = (width) => {
+      const nextHeight = Math.max(420, Math.min(700, Math.round(width * 0.56)));
+      setViewportHeight((prev) => (prev === nextHeight ? prev : nextHeight));
+    };
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      updateFromWidth(entry.contentRect.width);
+    });
+
+    observer.observe(container);
+    updateFromWidth(container.clientWidth);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   return (
-    <div className="h-full min-h-[420px] w-full rounded-xl border border-cyan-500/40 bg-slate-800/60 shadow-panel">
-      <Canvas shadows camera={{ position: [0, 8, 23], fov: 52 }} gl={{ antialias: true }}>
+    <div
+      ref={containerRef}
+      className="w-full min-w-0 overflow-hidden rounded-xl border border-cyan-500/40 bg-slate-800/60 shadow-panel"
+      style={{ height: `${viewportHeight}px` }}
+    >
+      <Canvas
+        shadows
+        camera={{ position: [0, 8, 23], fov: 52 }}
+        gl={{ antialias: true }}
+        style={{ width: "100%", height: "100%" }}
+        resize={{ debounce: { resize: 0, scroll: 0 } }}
+      >
         <SceneContent simulation={simulation} onSelectTopic={onSelectTopic} resetToken={resetToken} />
       </Canvas>
     </div>

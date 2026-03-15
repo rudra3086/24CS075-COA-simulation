@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import ControlPanel from "../components/ControlPanel";
 import GPUScene from "../components/GPUScene";
 
@@ -58,21 +58,6 @@ export default function Page() {
   const [selectedTopic, setSelectedTopic] = useState("gpuArchitecture");
   const [resetToken, setResetToken] = useState(0);
   const [sidebarVisible, setSidebarVisible] = useState(true);
-
-  useEffect(() => {
-    // Let Canvas re-measure after layout change without remounting scene state.
-    const first = window.requestAnimationFrame(() => {
-      window.dispatchEvent(new Event("resize"));
-    });
-    const timer = window.setTimeout(() => {
-      window.dispatchEvent(new Event("resize"));
-    }, 120);
-
-    return () => {
-      window.cancelAnimationFrame(first);
-      window.clearTimeout(timer);
-    };
-  }, [sidebarVisible]);
 
   const topic = useMemo(() => TOPIC_INFO[selectedTopic] ?? TOPIC_INFO.gpuArchitecture, [selectedTopic]);
 
