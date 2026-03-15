@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ControlPanel from "../components/ControlPanel";
 import GPUScene from "../components/GPUScene";
 
@@ -58,6 +58,21 @@ export default function Page() {
   const [selectedTopic, setSelectedTopic] = useState("gpuArchitecture");
   const [resetToken, setResetToken] = useState(0);
   const [sidebarVisible, setSidebarVisible] = useState(true);
+
+  useEffect(() => {
+    // Let Canvas re-measure after layout change without remounting scene state.
+    const first = window.requestAnimationFrame(() => {
+      window.dispatchEvent(new Event("resize"));
+    });
+    const timer = window.setTimeout(() => {
+      window.dispatchEvent(new Event("resize"));
+    }, 120);
+
+    return () => {
+      window.cancelAnimationFrame(first);
+      window.clearTimeout(timer);
+    };
+  }, [sidebarVisible]);
 
   const topic = useMemo(() => TOPIC_INFO[selectedTopic] ?? TOPIC_INFO.gpuArchitecture, [selectedTopic]);
 
@@ -120,8 +135,10 @@ export default function Page() {
           </button>
         </div>
 
-        <section className={`grid gap-4 ${sidebarVisible ? "xl:grid-cols-[minmax(0,1fr)_360px]" : "grid-cols-1"}`}>
-          <div className="grid gap-4">
+        <section
+          className={`items-start gap-4 ${sidebarVisible ? "flex flex-col xl:flex-row" : "grid grid-cols-1"}`}
+        >
+          <div className="grid min-w-0 flex-1 gap-4">
             <GPUScene simulation={simulation} onSelectTopic={setSelectedTopic} resetToken={resetToken} />
             <ControlPanel
               running={running}
@@ -178,7 +195,7 @@ export default function Page() {
           </div>
 
           {sidebarVisible ? (
-          <aside className="panel-shell h-fit xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto">
+          <aside className="panel-shell w-full min-w-0 h-fit xl:w-[340px] xl:shrink-0 xl:self-start xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto">
             <h2 className="mb-3 text-xl font-semibold text-cyan-200">Educational Sidebar</h2>
             <h3 className="mb-2 text-lg font-semibold text-emerald-300">{topic.title}</h3>
             <p className="mb-4 text-sm leading-6 text-slate-200">{topic.body}</p>
