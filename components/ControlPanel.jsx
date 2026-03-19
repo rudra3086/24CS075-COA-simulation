@@ -3,7 +3,6 @@
 export default function ControlPanel({
   running,
   showParallel,
-  tensorCoresEnabled,
   simulationSpeed,
   taskRate,
   workComplexity,
@@ -20,7 +19,6 @@ export default function ControlPanel({
   onToggleSmHighlight,
   onToggleScheduling,
   onToggleParallel,
-  onToggleTensorCores,
   onSpeedChange,
   onTaskRateChange,
   onWorkComplexityChange,
@@ -58,9 +56,6 @@ export default function ControlPanel({
           <button className="control-btn" onClick={onToggleScheduling}>Scheduling View</button>
           <button className="control-btn" onClick={onToggleParallel}>
             Parallel: {showParallel ? "On" : "Off"}
-          </button>
-          <button className="control-btn" onClick={onToggleTensorCores}>
-            Tensor Cores: {tensorCoresEnabled ? "On" : "Off"}
           </button>
           <button className="control-btn" onClick={onToggleAutoRotate}>
             Auto-Rotate: {autoRotate ? "On" : "Off"}

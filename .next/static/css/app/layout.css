@@ -1059,6 +1059,12 @@ video {
 .border-slate-700\/80 {
   border-color: rgb(51 65 85 / 0.8);
 }
+.border-cyan-700\/35 {
+  border-color: rgb(14 116 144 / 0.35);
+}
+.border-cyan-700\/40 {
+  border-color: rgb(14 116 144 / 0.4);
+}
 .bg-cpu {
   --tw-bg-opacity: 1;
   background-color: rgb(255 155 61 / var(--tw-bg-opacity, 1));
@@ -1114,6 +1120,9 @@ video {
 .bg-thread {
   --tw-bg-opacity: 1;
   background-color: rgb(88 255 160 / var(--tw-bg-opacity, 1));
+}
+.bg-cyan-500\/10 {
+  background-color: rgb(6 182 212 / 0.1);
 }
 .bg-gradient-to-r {
   background-image: linear-gradient(to right, var(--tw-gradient-stops));

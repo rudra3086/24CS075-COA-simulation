@@ -1,10 +1,4 @@
 {
-  "app\\page.js -> ../components/TensorCoreSimulation": {
-    "id": "app\\page.js -> ../components/TensorCoreSimulation",
-    "files": [
-      "static/chunks/_app-pages-browser_components_TensorCoreSimulation_jsx.js"
-    ]
-  },
   "node_modules\\@react-three\\drei\\core\\VideoTexture.js -> hls.js": {
     "id": "node_modules\\@react-three\\drei\\core\\VideoTexture.js -> hls.js",
     "files": []

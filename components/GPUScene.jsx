@@ -78,7 +78,6 @@ function SceneContent({ simulation, onSelectTopic, resetToken }) {
       (simulation.showParallel ? 8 : 5)
       * (1 - simulation.memoryIntensity * 0.38)
       * (1 - simulation.divergence * 0.28)
-      * (simulation.tensorCoresEnabled ? 1.2 : 1)
     )
   );
 
@@ -121,10 +120,7 @@ function SceneContent({ simulation, onSelectTopic, resetToken }) {
     const memory = THREE.MathUtils.clamp(simulation.memoryIntensity + (Math.random() - 0.5) * 0.2, 0.1, 1);
     const divergence = THREE.MathUtils.clamp(simulation.divergence + (Math.random() - 0.5) * 0.24, 0, 1);
     const baseExec = 1.0 + complexity * 2.1 + memory * 1.3 + divergence * 1.2;
-    const tensorAcceleration = simulation.tensorCoresEnabled
-      ? 1 + complexity * 0.85 * (1 - divergence * 0.55)
-      : 1;
-    const requiredExec = (simulation.showParallel ? baseExec : baseExec * 1.45) / tensorAcceleration;
+    const requiredExec = simulation.showParallel ? baseExec : baseExec * 1.45;
 
     return {
       id: threadIdRef.current,
@@ -421,7 +417,6 @@ function SceneContent({ simulation, onSelectTopic, resetToken }) {
       <GPUModule
         position={GPU_POSITION}
         highlightSM={simulation.highlightSM}
-        tensorCoresEnabled={simulation.tensorCoresEnabled}
         registerSMRef={registerSMRef}
         onSelect={onSelectTopic}
         onHover={setHoverText}

@@ -1,14 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import dynamic from "next/dynamic";
 import ControlPanel from "../components/ControlPanel";
 import GPUScene from "../components/GPUScene";
-
-const TensorCoreSimulation = dynamic(() => import("../components/TensorCoreSimulation"), {
-  ssr: false,
-  loading: () => <div className="panel-shell text-sm text-slate-300">Loading Tensor Core Simulation...</div>
-});
 
 const TOPIC_INFO = {
   gpuArchitecture: {
@@ -31,10 +25,6 @@ const TOPIC_INFO = {
     title: "Thread Scheduling",
     body: "The scheduler maps thread blocks to SMs. As blocks complete, new blocks are dispatched. This continuous assignment keeps GPU hardware busy."
   },
-  tensorCores: {
-    title: "Advancement: Tensor Cores",
-    body: "Tensor Cores accelerate matrix-heavy operations by executing mixed-precision fused multiply-add pipelines. They boost deep learning and linear algebra throughput per clock when workloads are compute-dense and parallel."
-  },
   cpu: {
     title: "CPU Role",
     body: "The CPU launches kernels and submits tasks to the GPU. Data and execution commands flow from CPU to GPU for massively parallel execution."
@@ -46,7 +36,6 @@ export default function Page() {
   const [highlightSM, setHighlightSM] = useState(false);
   const [showScheduling, setShowScheduling] = useState(false);
   const [showParallel, setShowParallel] = useState(true);
-  const [tensorCoresEnabled, setTensorCoresEnabled] = useState(false);
   const [simulationSpeed, setSimulationSpeed] = useState(1);
   const [taskRate, setTaskRate] = useState(0.35);
   const [workComplexity, setWorkComplexity] = useState(0.55);
@@ -69,7 +58,6 @@ export default function Page() {
   const [selectedTopic, setSelectedTopic] = useState("gpuArchitecture");
   const [resetToken, setResetToken] = useState(0);
   const [sidebarVisible, setSidebarVisible] = useState(true);
-  const [simulationTab, setSimulationTab] = useState("architecture");
 
   const topic = useMemo(() => TOPIC_INFO[selectedTopic] ?? TOPIC_INFO.gpuArchitecture, [selectedTopic]);
 
@@ -79,7 +67,6 @@ export default function Page() {
       highlightSM,
       showScheduling,
       showParallel,
-      tensorCoresEnabled,
       simulationSpeed,
       taskRate,
       complexity: workComplexity,
@@ -98,7 +85,6 @@ export default function Page() {
       highlightSM,
       showScheduling,
       showParallel,
-      tensorCoresEnabled,
       simulationSpeed,
       taskRate,
       workComplexity,
@@ -138,40 +124,10 @@ export default function Page() {
           className={`items-start gap-4 ${sidebarVisible ? "flex flex-col xl:flex-row" : "grid grid-cols-1"}`}
         >
           <div className="grid min-w-0 flex-1 gap-4">
-            <div className="panel-shell p-2">
-              <div className="grid gap-2 sm:grid-cols-2">
-                <button
-                  type="button"
-                  className={`control-btn ${simulationTab === "architecture" ? "control-btn-primary" : ""}`}
-                  onClick={() => {
-                    setSimulationTab("architecture");
-                    setSelectedTopic("gpuArchitecture");
-                  }}
-                >
-                  Architecture Simulation
-                </button>
-                <button
-                  type="button"
-                  className={`control-btn ${simulationTab === "tensorLab" ? "control-btn-primary" : ""}`}
-                  onClick={() => {
-                    setSimulationTab("tensorLab");
-                    setSelectedTopic("tensorCores");
-                  }}
-                >
-                  Tensor Core Simulation
-                </button>
-              </div>
-            </div>
-
-            {simulationTab === "architecture" ? (
-              <GPUScene simulation={simulation} onSelectTopic={setSelectedTopic} resetToken={resetToken} />
-            ) : (
-              <TensorCoreSimulation simulationSpeed={simulationSpeed} />
-            )}
+            <GPUScene simulation={simulation} onSelectTopic={setSelectedTopic} resetToken={resetToken} />
             <ControlPanel
               running={running}
               showParallel={showParallel}
-              tensorCoresEnabled={tensorCoresEnabled}
               simulationSpeed={simulationSpeed}
               taskRate={taskRate}
               workComplexity={workComplexity}
@@ -205,10 +161,6 @@ export default function Page() {
                 setShowParallel((v) => !v);
                 setSelectedTopic("parallelProcessing");
               }}
-              onToggleTensorCores={() => {
-                setTensorCoresEnabled((v) => !v);
-                setSelectedTopic("tensorCores");
-              }}
               onSpeedChange={(value) => setSimulationSpeed(value)}
               onTaskRateChange={(value) => setTaskRate(value)}
               onWorkComplexityChange={(value) => setWorkComplexity(value)}
@@ -239,9 +191,6 @@ export default function Page() {
               </p>
               <p className="mt-1">
                 Bottleneck: <span className="font-semibold text-amber-300">{performance.bottleneck}</span>
-              </p>
-              <p className="mt-1">
-                Tensor Cores: <span className={tensorCoresEnabled ? "font-semibold text-emerald-300" : "font-semibold text-slate-300"}>{tensorCoresEnabled ? "Enabled" : "Disabled"}</span>
               </p>
             </div>
 
