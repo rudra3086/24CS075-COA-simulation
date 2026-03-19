@@ -64,6 +64,7 @@ function Fan({ position, speed = 1 }) {
 export default function GPUModule({
   position = [2, 0, 0],
   highlightSM,
+  tensorCoresEnabled,
   onSelect,
   registerSMRef,
   onHover
@@ -92,6 +93,17 @@ export default function GPUModule({
   for (let idx = 0; idx < 17; idx += 1) {
     pciePins.push(-2.7 + idx * 0.34);
   }
+
+  const tensorTilePositions = [
+    [-0.9, 0.79, -0.58],
+    [-0.3, 0.79, -0.58],
+    [0.3, 0.79, -0.58],
+    [0.9, 0.79, -0.58],
+    [-0.9, 0.79, 0.58],
+    [-0.3, 0.79, 0.58],
+    [0.3, 0.79, 0.58],
+    [0.9, 0.79, 0.58]
+  ];
 
   return (
     <group position={position}>
@@ -153,6 +165,35 @@ export default function GPUModule({
         <boxGeometry args={[2.1, 0.1, 1.8]} />
         <meshStandardMaterial color="#6de5ff" emissive="#117ca1" emissiveIntensity={0.38} metalness={0.28} roughness={0.24} />
       </mesh>
+
+      {tensorTilePositions.map((tilePos, idx) => (
+        <mesh
+          key={`tensor-tile-${idx}`}
+          castShadow
+          receiveShadow
+          position={tilePos}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect("tensorCores");
+          }}
+          onPointerOver={(e) => {
+            e.stopPropagation();
+            if (onHover) onHover("Tensor Cores: matrix acceleration units for AI and dense linear algebra");
+          }}
+          onPointerOut={() => {
+            if (onHover) onHover("");
+          }}
+        >
+          <boxGeometry args={[0.24, 0.07, 0.24]} />
+          <meshStandardMaterial
+            color={tensorCoresEnabled ? "#f5b4ff" : "#5f5f78"}
+            emissive={tensorCoresEnabled ? "#d43dff" : "#222537"}
+            emissiveIntensity={tensorCoresEnabled ? 1.15 : 0.3}
+            metalness={0.35}
+            roughness={0.42}
+          />
+        </mesh>
+      ))}
 
       {memoryModules.map((memoryPos, idx) => (
         <mesh key={`gpu-mem-${idx}`} castShadow receiveShadow position={memoryPos}>

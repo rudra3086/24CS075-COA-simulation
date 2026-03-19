@@ -15,6 +15,7 @@ const SCHEDULER_POS = [2, 2.5, -2.7];
 
 function SceneContent({ simulation, onSelectTopic, resetToken }) {
   const smRefs = useRef([]);
+  const smActivityRef = useRef(new Array(SM_LOCAL_LAYOUT.length).fill(0));
   const [threads, setThreads] = useState([]);
   const [hoverText, setHoverText] = useState("");
   const spawnTimerRef = useRef(0);
@@ -73,7 +74,12 @@ function SceneContent({ simulation, onSelectTopic, resetToken }) {
 
   const capacityPerSM = Math.max(
     2,
-    Math.round((simulation.showParallel ? 8 : 5) * (1 - simulation.memoryIntensity * 0.38) * (1 - simulation.divergence * 0.28))
+    Math.round(
+      (simulation.showParallel ? 8 : 5)
+      * (1 - simulation.memoryIntensity * 0.38)
+      * (1 - simulation.divergence * 0.28)
+      * (simulation.tensorCoresEnabled ? 1.2 : 1)
+    )
   );
 
   const selectSmWithCapacity = (policy, smLoad, capacity) => {
@@ -115,29 +121,32 @@ function SceneContent({ simulation, onSelectTopic, resetToken }) {
     const memory = THREE.MathUtils.clamp(simulation.memoryIntensity + (Math.random() - 0.5) * 0.2, 0.1, 1);
     const divergence = THREE.MathUtils.clamp(simulation.divergence + (Math.random() - 0.5) * 0.24, 0, 1);
     const baseExec = 1.0 + complexity * 2.1 + memory * 1.3 + divergence * 1.2;
-    const requiredExec = simulation.showParallel ? baseExec : baseExec * 1.45;
+    const tensorAcceleration = simulation.tensorCoresEnabled
+      ? 1 + complexity * 0.85 * (1 - divergence * 0.55)
+      : 1;
+    const requiredExec = (simulation.showParallel ? baseExec : baseExec * 1.45) / tensorAcceleration;
 
     return {
-    id: threadIdRef.current,
-    phase: "toScheduler",
-    from: start,
-    via,
-    target: via,
-    smIndex: -1,
-    progress: 0,
-    position: start,
-    alpha: 0.98,
-    scale: 1,
-    age: 0,
-    execTime: 0,
-    queuedFor: 0,
-    createdAt: elapsedRef.current,
-    dispatchAt: null,
-    requiredExec,
-    complexity,
-    memory,
-    divergence
-  };
+      id: threadIdRef.current,
+      phase: "toScheduler",
+      from: start,
+      via,
+      target: via,
+      smIndex: -1,
+      progress: 0,
+      position: start,
+      alpha: 0.98,
+      scale: 1,
+      age: 0,
+      execTime: 0,
+      queuedFor: 0,
+      createdAt: elapsedRef.current,
+      dispatchAt: null,
+      requiredExec,
+      complexity,
+      memory,
+      divergence
+    };
   };
 
   // React Three Fiber useFrame runs on requestAnimationFrame.
@@ -150,8 +159,9 @@ function SceneContent({ simulation, onSelectTopic, resetToken }) {
       if (!smMesh) return;
       const material = smMesh.material;
       if (simulation.highlightSM) {
-        material.emissiveIntensity = 1.1 + Math.abs(Math.sin(t * 3 + idx)) * 0.8;
-        smMesh.position.y = SM_LOCAL_LAYOUT[idx][1] + Math.sin(t * 2 + idx) * 0.05;
+        const activity = smActivityRef.current[idx] ?? 0;
+        material.emissiveIntensity = 0.8 + activity * 1.2;
+        smMesh.position.y = SM_LOCAL_LAYOUT[idx][1] + activity * 0.08;
       } else {
         material.emissiveIntensity = 0.9;
         smMesh.position.y = SM_LOCAL_LAYOUT[idx][1];
@@ -261,6 +271,9 @@ function SceneContent({ simulation, onSelectTopic, resetToken }) {
           if (th.smIndex >= 0) smLoad[th.smIndex] += 1;
         }
       }
+
+      // Keep a normalized per-SM activity map for meaningful SM highlighting.
+      smActivityRef.current = smLoad.map((count) => Math.min(1, count / Math.max(1, capacityPerSM)));
 
       queuedIndices.sort((a, b) => next[a].createdAt - next[b].createdAt);
       if (simulation.schedulingPolicy === "random") {
@@ -408,6 +421,7 @@ function SceneContent({ simulation, onSelectTopic, resetToken }) {
       <GPUModule
         position={GPU_POSITION}
         highlightSM={simulation.highlightSM}
+        tensorCoresEnabled={simulation.tensorCoresEnabled}
         registerSMRef={registerSMRef}
         onSelect={onSelectTopic}
         onHover={setHoverText}
