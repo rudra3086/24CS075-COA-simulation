@@ -210,24 +210,6 @@ export default function Page() {
               <p>Warp Divergence: <span className="text-emerald-300">{Math.round(divergence * 100)}%</span></p>
             </div>
 
-            <div className="space-y-2 text-sm text-slate-300">
-              <p className="panel-card px-3 py-2">Click CPU to view task offloading details.</p>
-              <p className="panel-card px-3 py-2">Click GPU/SM blocks to learn architecture and SM responsibilities.</p>
-              <p className="panel-card px-3 py-2">Click threads to focus on parallel processing behavior.</p>
-              <p className="panel-card px-3 py-2">Click scheduler/arrows to understand thread scheduling.</p>
-            </div>
-
-            <div className="mt-5 border-t border-slate-700/60 pt-4">
-              <h4 className="mb-2 text-sm font-semibold text-cyan-200">Color Legend</h4>
-              <ul className="space-y-2 text-sm text-slate-300">
-                <li><span className="legend-dot bg-cpu" /> CPU</li>
-                <li><span className="legend-dot bg-gpu" /> GPU Chip</li>
-                <li><span className="legend-dot bg-sm" /> Streaming Multiprocessor</li>
-                <li><span className="legend-dot bg-thread" /> Thread</li>
-                <li><span className="legend-dot bg-scheduler" /> Scheduler Arrows</li>
-              </ul>
-            </div>
-
             <div className="mt-5 border-t border-slate-700/60 pt-4">
               <h4 className="mb-3 text-sm font-semibold text-cyan-200">SM Utilization</h4>
               <div className="space-y-2 text-xs text-slate-300">
@@ -250,6 +232,25 @@ export default function Page() {
                 ))}
               </div>
             </div>
+
+            <div className="mt-6 space-y-2 text-sm text-slate-300">
+              <p className="panel-card px-3 py-2">Click CPU to view task offloading details.</p>
+              <p className="panel-card px-3 py-2">Click GPU/SM blocks to learn architecture and SM responsibilities.</p>
+              <p className="panel-card px-3 py-2">Click threads to focus on parallel processing behavior.</p>
+              <p className="panel-card px-3 py-2">Click scheduler/arrows to understand thread scheduling.</p>
+            </div>
+
+            <div className="mt-5 border-t border-slate-700/60 pt-4">
+              <h4 className="mb-2 text-sm font-semibold text-cyan-200">Color Legend</h4>
+              <ul className="space-y-2 text-sm text-slate-300">
+                <li><span className="legend-dot bg-cpu" /> CPU</li>
+                <li><span className="legend-dot bg-gpu" /> GPU Chip</li>
+                <li><span className="legend-dot bg-sm" /> Streaming Multiprocessor</li>
+                <li><span className="legend-dot bg-thread" /> Thread</li>
+                <li><span className="legend-dot bg-scheduler" /> Scheduler Arrows</li>
+              </ul>
+            </div>
+
           </aside>
           ) : null}
         </section>
