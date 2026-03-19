@@ -36,6 +36,7 @@ export default function Page() {
   const [highlightSM, setHighlightSM] = useState(false);
   const [showScheduling, setShowScheduling] = useState(false);
   const [showParallel, setShowParallel] = useState(true);
+  const [showCoreUtilization, setShowCoreUtilization] = useState(false);
   const [simulationSpeed, setSimulationSpeed] = useState(1);
   const [taskRate, setTaskRate] = useState(0.35);
   const [workComplexity, setWorkComplexity] = useState(0.55);
@@ -45,6 +46,8 @@ export default function Page() {
   const [activeThreads, setActiveThreads] = useState(0);
   const [taskStats, setTaskStats] = useState({ queued: 0, dispatched: 0, executing: 0, completed: 0 });
   const [smUtilization, setSmUtilization] = useState([0, 0, 0, 0, 0, 0]);
+  const [coreUtilization, setCoreUtilization] = useState(Array(6).fill(null).map(() => Array(6).fill(0)));
+  const [activeCoreMap, setActiveCoreMap] = useState(Array(6).fill(null).map(() => Array(6).fill(false)));
   const [performance, setPerformance] = useState({
     throughput: 0,
     avgLatency: 0,
@@ -58,6 +61,7 @@ export default function Page() {
   const [selectedTopic, setSelectedTopic] = useState("gpuArchitecture");
   const [resetToken, setResetToken] = useState(0);
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [quickControlsMinimized, setQuickControlsMinimized] = useState(false);
 
   const topic = useMemo(() => TOPIC_INFO[selectedTopic] ?? TOPIC_INFO.gpuArchitecture, [selectedTopic]);
 
@@ -67,6 +71,9 @@ export default function Page() {
       highlightSM,
       showScheduling,
       showParallel,
+      showCoreUtilization,
+      coreUtilization,
+      activeCoreMap,
       simulationSpeed,
       taskRate,
       complexity: workComplexity,
@@ -78,6 +85,8 @@ export default function Page() {
       onStatsChange: setActiveThreads,
       onTaskStatsChange: setTaskStats,
       onSmUtilizationChange: setSmUtilization,
+      onCoreUtilizationChange: setCoreUtilization,
+      onActiveCoreMapChange: setActiveCoreMap,
       onPerformanceChange: setPerformance
     }),
     [
@@ -85,6 +94,9 @@ export default function Page() {
       highlightSM,
       showScheduling,
       showParallel,
+      showCoreUtilization,
+      coreUtilization,
+      activeCoreMap,
       simulationSpeed,
       taskRate,
       workComplexity,
@@ -124,10 +136,101 @@ export default function Page() {
           className={`items-start gap-4 ${sidebarVisible ? "flex flex-col xl:flex-row" : "grid grid-cols-1"}`}
         >
           <div className="grid min-w-0 flex-1 gap-4">
-            <GPUScene simulation={simulation} onSelectTopic={setSelectedTopic} resetToken={resetToken} />
+            <div className="relative min-w-0 w-full">
+              <GPUScene
+                simulation={simulation}
+                onSelectTopic={setSelectedTopic}
+                resetToken={resetToken}
+                layoutToken={sidebarVisible}
+              />
+
+              <div className="pointer-events-none absolute left-3 top-3 z-20 w-[min(92%,360px)]">
+                <div className="pointer-events-auto rounded-lg border border-cyan-400/45 bg-slate-900/78 p-3 shadow-panel backdrop-blur-sm">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-200/90">Quick Controls</p>
+                    <button
+                      type="button"
+                      className="control-btn px-2 py-1 text-[10px]"
+                      onClick={() => setQuickControlsMinimized((v) => !v)}
+                    >
+                      {quickControlsMinimized ? "Expand" : "Minimize"}
+                    </button>
+                  </div>
+
+                  {!quickControlsMinimized ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          className="control-btn control-btn-primary"
+                          onClick={() => {
+                            setRunning(true);
+                            setSelectedTopic("parallelProcessing");
+                          }}
+                        >
+                          Start
+                        </button>
+                        <button className="control-btn" onClick={() => setRunning(false)}>Pause</button>
+                        <button
+                          className="control-btn"
+                          onClick={() => {
+                            setRunning(false);
+                            setResetToken((v) => v + 1);
+                            setActiveThreads(0);
+                            setSmUtilization([0, 0, 0, 0, 0, 0]);
+                            setCoreUtilization(Array(6).fill(null).map(() => Array(6).fill(0)));
+                            setActiveCoreMap(Array(6).fill(null).map(() => Array(6).fill(false)));
+                            setSelectedTopic("gpuArchitecture");
+                          }}
+                        >
+                          Reset
+                        </button>
+                        <button
+                          className="control-btn"
+                          onClick={() => {
+                            setBurstToken((v) => v + 1);
+                            setRunning(true);
+                            setSelectedTopic("cpu");
+                          }}
+                        >
+                          Inject Burst
+                        </button>
+                      </div>
+
+                      <label className="mt-2 block text-[11px] text-slate-200">
+                        Policy
+                        <select
+                          className="control-select"
+                          value={schedulingPolicy}
+                          onChange={(e) => {
+                            setSchedulingPolicy(e.target.value);
+                            setSelectedTopic("threadScheduling");
+                          }}
+                        >
+                          <option value="fcfs">FCFS</option>
+                          <option value="roundRobin">Round Robin</option>
+                          <option value="random">Random</option>
+                          <option value="loadAware">Load Aware</option>
+                        </select>
+                      </label>
+
+                      <div className="mt-3 rounded-md border border-slate-700/75 bg-slate-800/70 p-2 text-[11px] text-slate-200">
+                        <h4 className="mb-1 text-[11px] font-semibold text-cyan-200">Live Performance</h4>
+                        <p>Occupancy: <span className="text-emerald-300">{performance.occupancy}%</span></p>
+                        <p>Throughput: <span className="text-emerald-300">{performance.throughput.toFixed(2)} tasks/s</span></p>
+                        <p>Avg Latency: <span className="text-cyan-300">{performance.avgLatency.toFixed(2)}s</span></p>
+                        <p>Scheduler Load: <span className="text-cyan-300">{performance.schedulerLoad}%</span></p>
+                        <p>SM Capacity: <span className="text-cyan-300">{performance.smCapacity} active blocks/SM</span></p>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
             <ControlPanel
               running={running}
               showParallel={showParallel}
+              showCoreUtilization={showCoreUtilization}
               simulationSpeed={simulationSpeed}
               taskRate={taskRate}
               workComplexity={workComplexity}
@@ -147,6 +250,9 @@ export default function Page() {
                 setRunning(false);
                 setResetToken((v) => v + 1);
                 setActiveThreads(0);
+                setSmUtilization([0, 0, 0, 0, 0, 0]);
+                setCoreUtilization(Array(6).fill(null).map(() => Array(6).fill(0)));
+                setActiveCoreMap(Array(6).fill(null).map(() => Array(6).fill(false)));
                 setSelectedTopic("gpuArchitecture");
               }}
               onToggleSmHighlight={() => {
@@ -160,6 +266,9 @@ export default function Page() {
               onToggleParallel={() => {
                 setShowParallel((v) => !v);
                 setSelectedTopic("parallelProcessing");
+              }}
+              onToggleCoreUtilization={() => {
+                setShowCoreUtilization((v) => !v);
               }}
               onSpeedChange={(value) => setSimulationSpeed(value)}
               onTaskRateChange={(value) => setTaskRate(value)}
@@ -195,15 +304,6 @@ export default function Page() {
             </div>
 
             <div className="panel-card mb-4 text-xs text-slate-200">
-              <h4 className="mb-2 text-sm font-semibold text-cyan-200">Live Performance</h4>
-              <p>Occupancy: <span className="text-emerald-300">{performance.occupancy}%</span></p>
-              <p>Throughput: <span className="text-emerald-300">{performance.throughput.toFixed(2)} tasks/s</span></p>
-              <p>Avg Latency: <span className="text-cyan-300">{performance.avgLatency.toFixed(2)}s</span></p>
-              <p>Scheduler Load: <span className="text-cyan-300">{performance.schedulerLoad}%</span></p>
-              <p>SM Capacity: <span className="text-cyan-300">{performance.smCapacity} active blocks/SM</span></p>
-            </div>
-
-            <div className="panel-card mb-4 text-xs text-slate-200">
               <h4 className="mb-2 text-sm font-semibold text-cyan-200">Workload Profile</h4>
               <p>Compute Complexity: <span className="text-emerald-300">{Math.round(workComplexity * 100)}%</span></p>
               <p>Memory Intensity: <span className="text-emerald-300">{Math.round(memoryIntensity * 100)}%</span></p>
@@ -232,6 +332,47 @@ export default function Page() {
                 ))}
               </div>
             </div>
+
+            {showCoreUtilization ? (
+              <div className="mt-5 border-t border-slate-700/60 pt-4">
+                <h4 className="mb-3 text-sm font-semibold text-cyan-200">Core Utilization</h4>
+                <p className="mb-2 text-[10px] tracking-wide text-slate-400">Levels: 0 20 40 60 80 100</p>
+                <div className="space-y-3 text-xs text-slate-300">
+                  {coreUtilization.map((smCores, smIdx) => (
+                    <div key={`core-util-sm-${smIdx}`}>
+                      <p className="mb-1 text-slate-200">SM {smIdx + 1}</p>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {smCores.map((value, coreIdx) => (
+                          <div
+                            key={`core-util-${smIdx}-${coreIdx}`}
+                            className="rounded border border-slate-700/70 bg-slate-800/55 px-1.5 py-1"
+                          >
+                            <div className="mb-1 flex items-center justify-between">
+                              <span className="text-[10px] text-slate-400">C{coreIdx + 1}</span>
+                              {activeCoreMap[smIdx]?.[coreIdx] ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-300">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                  Working
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className="h-2 overflow-hidden rounded bg-slate-900/80">
+                              <div
+                                className="h-full transition-all duration-150"
+                                style={{
+                                  width: `${value}%`,
+                                  background: "linear-gradient(90deg, #1f7a44 0%, #2fd36a 100%)"
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <div className="mt-6 space-y-2 text-sm text-slate-300">
               <p className="panel-card px-3 py-2">Click CPU to view task offloading details.</p>

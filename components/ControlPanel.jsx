@@ -3,6 +3,7 @@
 export default function ControlPanel({
   running,
   showParallel,
+  showCoreUtilization,
   simulationSpeed,
   taskRate,
   workComplexity,
@@ -12,20 +13,16 @@ export default function ControlPanel({
   activeThreads,
   taskStats,
   performance,
-  schedulingPolicy,
-  onStart,
-  onPause,
-  onReset,
   onToggleSmHighlight,
   onToggleScheduling,
   onToggleParallel,
+  onToggleCoreUtilization,
   onSpeedChange,
   onTaskRateChange,
   onWorkComplexityChange,
   onMemoryIntensityChange,
   onDivergenceChange,
   onToggleAutoRotate,
-  onPolicyChange,
   onSpawnBurst
 }) {
   const statusTone = running ? "text-emerald-300" : "text-amber-300";
@@ -39,16 +36,6 @@ export default function ControlPanel({
         </span>
       </div>
 
-      <div className="panel-card">
-        <p className="control-section-title">Primary Actions</p>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <button className="control-btn control-btn-primary" onClick={onStart}>Start</button>
-          <button className="control-btn" onClick={onPause}>Pause</button>
-          <button className="control-btn" onClick={onReset}>Reset</button>
-          <button className="control-btn" onClick={onSpawnBurst}>Inject Burst</button>
-        </div>
-      </div>
-
       <div className="panel-card mt-3">
         <p className="control-section-title">Visual Toggles</p>
         <div className="grid gap-2 sm:grid-cols-2">
@@ -57,27 +44,14 @@ export default function ControlPanel({
           <button className="control-btn" onClick={onToggleParallel}>
             Parallel: {showParallel ? "On" : "Off"}
           </button>
+          <button className="control-btn" onClick={onToggleCoreUtilization}>
+            Core Util: {showCoreUtilization ? "On" : "Off"}
+          </button>
           <button className="control-btn" onClick={onToggleAutoRotate}>
             Auto-Rotate: {autoRotate ? "On" : "Off"}
           </button>
+          <button className="control-btn" onClick={onSpawnBurst}>Inject Burst</button>
         </div>
-      </div>
-
-      <div className="panel-card mt-3">
-        <p className="control-section-title">Scheduling</p>
-        <label className="text-xs text-slate-200">
-          Policy
-          <select
-            className="control-select"
-            value={schedulingPolicy}
-            onChange={(e) => onPolicyChange(e.target.value)}
-          >
-            <option value="fcfs">FCFS</option>
-            <option value="roundRobin">Round Robin</option>
-            <option value="random">Random</option>
-            <option value="loadAware">Load Aware</option>
-          </select>
-        </label>
       </div>
 
       <div className="panel-card mt-3">

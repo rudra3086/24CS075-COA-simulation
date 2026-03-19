@@ -30,6 +30,8 @@ function SceneContent({ simulation, onSelectTopic, resetToken }) {
   const throughputWindowRef = useRef(0);
   const lastReportedTaskStatsRef = useRef("");
   const lastReportedUtilRef = useRef("");
+  const lastReportedCoreUtilRef = useRef("");
+  const lastReportedActiveCoreRef = useRef("");
   const lastReportedPerfRef = useRef("");
   const pendingBurstRef = useRef(0);
   const lastBurstTokenRef = useRef(-1);
@@ -57,6 +59,8 @@ function SceneContent({ simulation, onSelectTopic, resetToken }) {
     throughputWindowRef.current = 0;
     lastReportedTaskStatsRef.current = "";
     lastReportedUtilRef.current = "";
+    lastReportedCoreUtilRef.current = "";
+    lastReportedActiveCoreRef.current = "";
     lastReportedPerfRef.current = "";
     pendingBurstRef.current = 0;
   }, [resetToken]);
@@ -308,8 +312,10 @@ function SceneContent({ simulation, onSelectTopic, resetToken }) {
         simulation.onStatsChange(next.length);
       }
 
-      if (simulation.onTaskStatsChange || simulation.onSmUtilizationChange) {
+      if (simulation.onTaskStatsChange || simulation.onSmUtilizationChange || simulation.onCoreUtilizationChange || simulation.onActiveCoreMapChange) {
         const smCounts = new Array(smTargets.length).fill(0);
+        const coreCounts = Array(smTargets.length).fill(null).map(() => Array(6).fill(0));
+        const activeCoreMap = Array(smTargets.length).fill(null).map(() => Array(6).fill(false));
         let queued = 0;
         let dispatched = 0;
         let executing = 0;
@@ -321,6 +327,9 @@ function SceneContent({ simulation, onSelectTopic, resetToken }) {
           if (th.phase === "execute") executing += 1;
           if ((th.phase === "toSM" || th.phase === "execute") && th.smIndex >= 0) {
             smCounts[th.smIndex] += 1;
+            const coreIndex = th.id % 6;
+            coreCounts[th.smIndex][coreIndex] += th.phase === "execute" ? 1 : 0.5;
+            if (th.phase === "execute") activeCoreMap[th.smIndex][coreIndex] = true;
           }
         }
 
@@ -341,6 +350,25 @@ function SceneContent({ simulation, onSelectTopic, resetToken }) {
         if (simulation.onSmUtilizationChange && utilSig !== lastReportedUtilRef.current) {
           lastReportedUtilRef.current = utilSig;
           simulation.onSmUtilizationChange(util);
+        }
+
+        const perCoreCapacity = Math.max(1, Math.ceil(capacityPerSM / 6));
+        const coreUtil = coreCounts.map((smCoreCounts) =>
+          smCoreCounts.map((count) => {
+            const raw = Math.min(100, Math.round((count / perCoreCapacity) * 100));
+            return Math.min(100, Math.round(raw / 20) * 20);
+          })
+        );
+        const coreUtilSig = coreUtil.map((sm) => sm.join(",")).join("|");
+        if (simulation.onCoreUtilizationChange && coreUtilSig !== lastReportedCoreUtilRef.current) {
+          lastReportedCoreUtilRef.current = coreUtilSig;
+          simulation.onCoreUtilizationChange(coreUtil);
+        }
+
+        const activeCoreSig = activeCoreMap.map((sm) => sm.map((isActive) => (isActive ? 1 : 0)).join(",")).join("|");
+        if (simulation.onActiveCoreMapChange && activeCoreSig !== lastReportedActiveCoreRef.current) {
+          lastReportedActiveCoreRef.current = activeCoreSig;
+          simulation.onActiveCoreMapChange(activeCoreMap);
         }
 
         const avgLatency = completedCountRef.current > 0
@@ -417,6 +445,9 @@ function SceneContent({ simulation, onSelectTopic, resetToken }) {
       <GPUModule
         position={GPU_POSITION}
         highlightSM={simulation.highlightSM}
+        showCoreUtilization={simulation.showCoreUtilization}
+        coreUtilization={simulation.coreUtilization}
+        activeCoreMap={simulation.activeCoreMap}
         registerSMRef={registerSMRef}
         onSelect={onSelectTopic}
         onHover={setHoverText}
@@ -509,7 +540,7 @@ function SceneContent({ simulation, onSelectTopic, resetToken }) {
   );
 }
 
-export default function GPUScene({ simulation, onSelectTopic, resetToken }) {
+export default function GPUScene({ simulation, onSelectTopic, resetToken, layoutToken }) {
   const containerRef = useRef(null);
   const [viewportHeight, setViewportHeight] = useState(460);
 
@@ -534,7 +565,7 @@ export default function GPUScene({ simulation, onSelectTopic, resetToken }) {
     return () => {
       observer.disconnect();
     };
-  }, []);
+  }, [layoutToken]);
 
   return (
     <div

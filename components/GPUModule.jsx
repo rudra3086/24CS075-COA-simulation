@@ -14,12 +14,32 @@ const SM_LOCAL_LAYOUT = [
 
 export { SM_LOCAL_LAYOUT };
 
-function CoreCell({ position }) {
+function CoreCell({ position, utilization = 0, showCoreUtilization = false, isActive = false }) {
+  const fill = Math.max(0, Math.min(100, utilization)) / 100;
+  const coreColor = showCoreUtilization
+    ? `rgb(${Math.round(36 - fill * 20)}, ${Math.round(70 + fill * 145)}, ${Math.round(56 + fill * 24)})`
+    : "#95b8ff";
+  const coreEmissive = showCoreUtilization
+    ? `rgb(${Math.round(8 + fill * 14)}, ${Math.round(30 + fill * 78)}, ${Math.round(16 + fill * 18)})`
+    : "#1c3e70";
+
   return (
-    <mesh castShadow receiveShadow position={position}>
-      <boxGeometry args={[0.22, 0.1, 0.22]} />
-      <meshStandardMaterial color="#95b8ff" emissive="#1c3e70" emissiveIntensity={0.65} />
-    </mesh>
+    <group position={position}>
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[0.22, 0.1, 0.22]} />
+        <meshStandardMaterial
+          color={coreColor}
+          emissive={coreEmissive}
+          emissiveIntensity={showCoreUtilization ? 0.3 + fill * 1.1 : 0.65}
+        />
+      </mesh>
+      {isActive ? (
+        <mesh position={[0, 0.09, 0]}>
+          <sphereGeometry args={[0.05, 10, 10]} />
+          <meshStandardMaterial color="#6dff9d" emissive="#45f27f" emissiveIntensity={1.2} />
+        </mesh>
+      ) : null}
+    </group>
   );
 }
 
@@ -64,6 +84,9 @@ function Fan({ position, speed = 1 }) {
 export default function GPUModule({
   position = [2, 0, 0],
   highlightSM,
+  showCoreUtilization,
+  coreUtilization,
+  activeCoreMap,
   tensorCoresEnabled,
   onSelect,
   registerSMRef,
@@ -246,6 +269,9 @@ export default function GPUModule({
                   0,
                   -0.25 + Math.floor(core / 3) * 0.5
                 ]}
+                utilization={coreUtilization?.[smIdx]?.[core] ?? 0}
+                showCoreUtilization={showCoreUtilization}
+                isActive={activeCoreMap?.[smIdx]?.[core] ?? false}
               />
             ))}
           </group>
