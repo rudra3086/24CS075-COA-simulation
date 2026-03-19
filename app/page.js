@@ -4,6 +4,9 @@ import { useMemo, useState } from "react";
 import ControlPanel from "../components/ControlPanel";
 import GPUScene from "../components/GPUScene";
 
+const createZeroCoreUtilization = () => Array.from({ length: 6 }, () => Array(6).fill(0));
+const createInactiveCoreMap = () => Array.from({ length: 6 }, () => Array(6).fill(false));
+
 const TOPIC_INFO = {
   gpuArchitecture: {
     title: "GPU Architecture",
@@ -46,8 +49,8 @@ export default function Page() {
   const [activeThreads, setActiveThreads] = useState(0);
   const [taskStats, setTaskStats] = useState({ queued: 0, dispatched: 0, executing: 0, completed: 0 });
   const [smUtilization, setSmUtilization] = useState([0, 0, 0, 0, 0, 0]);
-  const [coreUtilization, setCoreUtilization] = useState(Array(6).fill(null).map(() => Array(6).fill(0)));
-  const [activeCoreMap, setActiveCoreMap] = useState(Array(6).fill(null).map(() => Array(6).fill(false)));
+  const [coreUtilization, setCoreUtilization] = useState(createZeroCoreUtilization);
+  const [activeCoreMap, setActiveCoreMap] = useState(createInactiveCoreMap);
   const [performance, setPerformance] = useState({
     throughput: 0,
     avgLatency: 0,
@@ -62,6 +65,34 @@ export default function Page() {
   const [resetToken, setResetToken] = useState(0);
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [quickControlsMinimized, setQuickControlsMinimized] = useState(false);
+
+  const handleStart = () => {
+    setRunning(true);
+    setSelectedTopic("parallelProcessing");
+  };
+
+  const handlePause = () => setRunning(false);
+
+  const handleReset = () => {
+    setRunning(false);
+    setResetToken((v) => v + 1);
+    setActiveThreads(0);
+    setSmUtilization([0, 0, 0, 0, 0, 0]);
+    setCoreUtilization(createZeroCoreUtilization());
+    setActiveCoreMap(createInactiveCoreMap());
+    setSelectedTopic("gpuArchitecture");
+  };
+
+  const handleInjectBurst = () => {
+    setBurstToken((v) => v + 1);
+    setRunning(true);
+    setSelectedTopic("cpu");
+  };
+
+  const handlePolicyChange = (value) => {
+    setSchedulingPolicy(value);
+    setSelectedTopic("threadScheduling");
+  };
 
   const topic = useMemo(() => TOPIC_INFO[selectedTopic] ?? TOPIC_INFO.gpuArchitecture, [selectedTopic]);
 
@@ -162,38 +193,13 @@ export default function Page() {
                       <div className="grid grid-cols-2 gap-2">
                         <button
                           className="control-btn control-btn-primary"
-                          onClick={() => {
-                            setRunning(true);
-                            setSelectedTopic("parallelProcessing");
-                          }}
+                          onClick={handleStart}
                         >
                           Start
                         </button>
-                        <button className="control-btn" onClick={() => setRunning(false)}>Pause</button>
-                        <button
-                          className="control-btn"
-                          onClick={() => {
-                            setRunning(false);
-                            setResetToken((v) => v + 1);
-                            setActiveThreads(0);
-                            setSmUtilization([0, 0, 0, 0, 0, 0]);
-                            setCoreUtilization(Array(6).fill(null).map(() => Array(6).fill(0)));
-                            setActiveCoreMap(Array(6).fill(null).map(() => Array(6).fill(false)));
-                            setSelectedTopic("gpuArchitecture");
-                          }}
-                        >
-                          Reset
-                        </button>
-                        <button
-                          className="control-btn"
-                          onClick={() => {
-                            setBurstToken((v) => v + 1);
-                            setRunning(true);
-                            setSelectedTopic("cpu");
-                          }}
-                        >
-                          Inject Burst
-                        </button>
+                        <button className="control-btn" onClick={handlePause}>Pause</button>
+                        <button className="control-btn" onClick={handleReset}>Reset</button>
+                        <button className="control-btn" onClick={handleInjectBurst}>Inject Burst</button>
                       </div>
 
                       <label className="mt-2 block text-[11px] text-slate-200">
@@ -201,10 +207,7 @@ export default function Page() {
                         <select
                           className="control-select"
                           value={schedulingPolicy}
-                          onChange={(e) => {
-                            setSchedulingPolicy(e.target.value);
-                            setSelectedTopic("threadScheduling");
-                          }}
+                          onChange={(e) => handlePolicyChange(e.target.value)}
                         >
                           <option value="fcfs">FCFS</option>
                           <option value="roundRobin">Round Robin</option>
@@ -240,21 +243,6 @@ export default function Page() {
               activeThreads={activeThreads}
               taskStats={taskStats}
               performance={performance}
-              schedulingPolicy={schedulingPolicy}
-              onStart={() => {
-                setRunning(true);
-                setSelectedTopic("parallelProcessing");
-              }}
-              onPause={() => setRunning(false)}
-              onReset={() => {
-                setRunning(false);
-                setResetToken((v) => v + 1);
-                setActiveThreads(0);
-                setSmUtilization([0, 0, 0, 0, 0, 0]);
-                setCoreUtilization(Array(6).fill(null).map(() => Array(6).fill(0)));
-                setActiveCoreMap(Array(6).fill(null).map(() => Array(6).fill(false)));
-                setSelectedTopic("gpuArchitecture");
-              }}
               onToggleSmHighlight={() => {
                 setHighlightSM((v) => !v);
                 setSelectedTopic("streamingMultiprocessor");
@@ -276,15 +264,7 @@ export default function Page() {
               onMemoryIntensityChange={(value) => setMemoryIntensity(value)}
               onDivergenceChange={(value) => setDivergence(value)}
               onToggleAutoRotate={() => setAutoRotate((v) => !v)}
-              onPolicyChange={(value) => {
-                setSchedulingPolicy(value);
-                setSelectedTopic("threadScheduling");
-              }}
-              onSpawnBurst={() => {
-                setBurstToken((v) => v + 1);
-                setRunning(true);
-                setSelectedTopic("cpu");
-              }}
+              onSpawnBurst={handleInjectBurst}
             />
           </div>
 
