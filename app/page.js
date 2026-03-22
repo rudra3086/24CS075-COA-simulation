@@ -65,6 +65,7 @@ export default function Page() {
   const [resetToken, setResetToken] = useState(0);
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [quickControlsMinimized, setQuickControlsMinimized] = useState(false);
+  const [oneGoMode, setOneGoMode] = useState(false);
 
   const handleStart = () => {
     setRunning(true);
@@ -200,6 +201,20 @@ export default function Page() {
                         <button className="control-btn" onClick={handlePause}>Pause</button>
                         <button className="control-btn" onClick={handleReset}>Reset</button>
                         <button className="control-btn" onClick={handleInjectBurst}>Inject Burst</button>
+                        <button
+                          className="control-btn"
+                          onClick={() => {
+                            setOneGoMode(true);
+                            setSidebarVisible(false);
+                            setShowScheduling(true);
+                            setHighlightSM(true);
+                            setShowParallel(true);
+                            setRunning(true);
+                            setSelectedTopic("parallelProcessing");
+                          }}
+                        >
+                          One‑Go Overview
+                        </button>
                       </div>
 
                       <label className="mt-2 block text-[11px] text-slate-200">
@@ -266,6 +281,25 @@ export default function Page() {
               onToggleAutoRotate={() => setAutoRotate((v) => !v)}
               onSpawnBurst={handleInjectBurst}
             />
+
+            {oneGoMode ? (
+              <div className="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center p-6">
+                <div className="max-w-2xl rounded-lg border border-cyan-400/45 bg-slate-900/90 p-6 text-slate-100 shadow-xl">
+                  <h3 className="mb-3 text-lg font-semibold text-cyan-200">One‑Go Overview</h3>
+                  <ol className="mb-4 list-decimal list-inside text-sm space-y-2 text-slate-200">
+                    <li><strong>CPU</strong>: Launches tasks and submits work to the scheduler.</li>
+                    <li><strong>Scheduler</strong>: Queues, prioritizes, and dispatches thread blocks to SMs.</li>
+                    <li><strong>GPU</strong>: Receives dispatched blocks; SMs run blocks in parallel.</li>
+                    <li><strong>SMs</strong>: Small compute clusters containing multiple cores and shared resources.</li>
+                    <li><strong>Cores</strong>: Execute threads; per-core and per-SM utilization affect throughput.</li>
+                    <li><strong>Metrics</strong>: Watch occupancy, throughput, and latency to identify bottlenecks.</li>
+                  </ol>
+                  <div className="flex justify-end gap-2">
+                    <button className="control-btn" onClick={() => setOneGoMode(false)}>Close</button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           {sidebarVisible ? (
